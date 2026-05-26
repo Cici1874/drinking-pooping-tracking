@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Open Flower">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Open Flower 🌸 人体进出口贸易记录仪</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;900&display=swap');
+
+:root {
+  --bg: #0f0f13;
+  --card: #1a1a24;
+  --border: #2a2a3a;
+  --amber: #f59e0b;
+  --purple: #a78bfa;
+  --pink: #f472b6;
+  --green: #34d399;
+  --text: #e2e2ee;
+  --dim: #6b6b80;
+  --glow: rgba(245,158,11,0.15);
+  --glowP: rgba(167,139,250,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans SC', 'PingFang SC', -apple-system, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#app {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 0 40px 0;
+  position: relative;
+}
+
+/* Loading */
+#loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#loading h2 { color: var(--amber); font-size:20px; font-weight:800; letter-spacing:4px; }
+#loading p { color: var(--dim); font-size:13px; margin-top:8px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  background: linear-gradient(180deg, var(--card) 0%, transparent 100%);
+}
+.header h1 { font-size:26px; font-weight:900; letter-spacing:3px; color:var(--amber); }
+.header .quote { font-size:12px; color:var(--dim); margin-top:8px; letter-spacing:1px; font-style:italic; }
+
+.content { padding: 0 16px; }
+
+/* Today card */
+.today-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+  text-align: center;
+}
+.today-label { font-size:12px; color:var(--dim); letter-spacing:2px; margin-bottom:12px; }
+.today-row { display:flex; align-items:center; justify-content:center; gap:24px; }
+.today-stat { display:flex; flex-direction:column; align-items:center; }
+.today-num { font-size:36px; font-weight:900; }
+.today-tag { font-size:12px; color:var(--dim); margin-top:4px; }
+.today-divider { font-size:20px; color:var(--dim); }
+.streak-badge {
+  margin-top:12px; font-size:12px; color:var(--amber);
+  background:var(--glow); padding:4px 12px; border-radius:20px;
+  display:inline-block;
+}
+
+/* Action buttons */
+.action-row { display:flex; gap:12px; margin-bottom:16px; }
+.btn-drink, .btn-poop {
+  flex:1; border-radius:14px; padding:16px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  cursor:pointer; color:var(--text); border:none; font-family:inherit;
+  transition: transform 0.15s;
+}
+.btn-drink:active, .btn-poop:active { transform: scale(0.96); }
+.btn-drink { background:var(--glow); border:1px solid rgba(245,158,11,0.25); }
+.btn-poop { background:var(--glowP); border:1px solid rgba(167,139,250,0.25); }
+.btn-drink .icon, .btn-poop .icon { font-size:28px; }
+.btn-drink .label, .btn-poop .label { font-size:13px; font-weight:700; }
+
+/* Chart */
+.chart-card {
+  background:var(--card); border-radius:16px; padding:16px 16px 12px;
+  border:1px solid var(--border); margin-bottom:16px;
+}
+.chart-title { font-size:12px; color:var(--dim); letter-spacing:1px; margin-bottom:12px; text-align:center; }
+.chart-row { display:flex; justify-content:space-around; align-items:flex-end; height:80px; }
+.chart-col { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bar-wrap { display:flex; gap:3px; align-items:flex-end; height:60px; }
+.bar-drink { width:12px; background:var(--amber); border-radius:4px 4px 0 0; min-height:2px; transition:height 0.3s; }
+.bar-poop { width:12px; background:var(--purple); border-radius:4px 4px 0 0; min-height:2px; transition:height 0.3s; }
+.chart-day { font-size:10px; color:var(--dim); }
+.chart-legend { display:flex; justify-content:center; gap:16px; margin-top:8px; }
+.legend-item { font-size:11px; color:var(--dim); display:flex; align-items:center; gap:4px; }
+.legend-dot { width:8px; height:8px; border-radius:2px; display:inline-block; }
+
+/* Spend card */
+.spend-card {
+  background:var(--card); border-radius:16px; padding:14px 18px;
+  border:1px solid var(--border); margin-bottom:16px;
+}
+.spend-label { font-size:11px; color:var(--dim); letter-spacing:1px; }
+.spend-row { display:flex; justify-content:space-between; align-items:baseline; margin-top:4px; }
+.spend-amount { font-size:24px; font-weight:900; color:var(--amber); }
+.spend-knife { font-size:13px; color:var(--dim); }
+
+/* Nav */
+.nav-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.nav-btn {
+  flex:1 1 auto; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:10px 8px; color:var(--text); font-size:12px;
+  cursor:pointer; font-weight:600; text-align:center; white-space:nowrap;
+  font-family:inherit; transition:transform 0.15s;
+}
+.nav-btn:active { transform:scale(0.96); }
+
+/* Forms */
+.form-title { font-size:20px; font-weight:900; margin-bottom:20px; margin-top:8px; text-align:center; }
+.field-label { font-size:12px; color:var(--dim); margin-bottom:8px; margin-top:16px; letter-spacing:1px; }
+.option-row { display:flex; gap:8px; flex-wrap:wrap; }
+.option, .option-active {
+  border-radius:10px; padding:10px 12px; cursor:pointer; text-align:center;
+  min-width:52px; flex:1 1 0; font-family:inherit; font-size:12px;
+  transition: all 0.15s;
+}
+.option { background:var(--card); border:1px solid var(--border); color:var(--text); }
+.option-active { background:var(--glow); border:1px solid var(--amber); color:var(--amber); font-weight:700; }
+.option .emoji, .option-active .emoji { font-size:22px; display:block; }
+.option .text, .option-active .text { font-size:11px; display:block; margin-top:2px; }
+
+.mood, .mood-active {
+  width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+  font-size:20px; border-radius:10px; cursor:pointer; border:none; font-family:inherit;
+  transition:all 0.15s;
+}
+.mood { background:var(--card); border:1px solid var(--border); }
+.mood-active { background:var(--glow); border:1px solid var(--amber); }
+
+.input {
+  width:100%; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; color:var(--text); font-size:14px;
+  outline:none; font-family:inherit;
+}
+.input::placeholder { color:var(--dim); }
+.knife-hint { font-size:12px; color:var(--dim); margin-top:4px; padding-left:4px; }
+
+.slider-wrap { padding:0 4px; }
+.slider { width:100%; accent-color:var(--purple); }
+.slider-label { font-size:13px; color:var(--purple); text-align:center; margin-top:4px; font-weight:600; }
+
+.form-actions { display:flex; gap:12px; margin-top:24px; }
+.btn-cancel {
+  flex:1; padding:12px; border-radius:12px; border:1px solid var(--border);
+  background:transparent; color:var(--dim); font-size:14px; cursor:pointer;
+  font-family:inherit;
+}
+.btn-submit-drink {
+  flex:2; padding:12px; border-radius:12px; border:none;
+  background:linear-gradient(135deg, var(--amber), #d97706);
+  color:#000; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit;
+}
+.btn-submit-poop {
+  flex:2; padding:12px; border-radius:12px; border:none;
+  background:linear-gradient(135deg, var(--purple), #7c3aed);
+  color:#fff; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit;
+}
+
+/* History */
+.history-list { display:flex; flex-direction:column; gap:8px; }
+.history-item {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--card); border-radius:12px; padding:12px 14px;
+  border:1px solid var(--border);
+}
+.history-left { display:flex; align-items:center; gap:10px; }
+.history-icon { font-size:22px; }
+.history-main { font-size:13px; font-weight:600; }
+.history-date { font-size:11px; color:var(--dim); margin-top:2px; }
+.delete-btn {
+  background:transparent; border:none; color:var(--dim); font-size:18px;
+  cursor:pointer; padding:4px 8px;
+}
+.empty { text-align:center; color:var(--dim); font-size:14px; padding:40px 0; }
+
+/* Back */
+.back-btn {
+  display:block; width:100%; padding:12px; margin-top:20px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  color:var(--text); font-size:13px; cursor:pointer; text-align:center;
+  font-family:inherit;
+}
+
+/* Achievements */
+.achieve-grid { display:flex; flex-direction:column; gap:10px; }
+.achieve-card {
+  background:var(--glow); border:1px solid rgba(245,158,11,0.25);
+  border-radius:12px; padding:14px 16px;
+}
+.achieve-card-locked {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:14px 16px; opacity:0.4;
+}
+.achieve-name { font-size:14px; font-weight:800; }
+.achieve-desc { font-size:11px; opacity:0.6; margin-top:4px; }
+.achieve-count { text-align:center; color:var(--dim); font-size:13px; margin-top:16px; }
+
+/* Report */
+.report-card {
+  background:var(--card); border-radius:16px; padding:24px 20px;
+  border:1px solid rgba(245,158,11,0.19);
+}
+.report-header { font-size:16px; font-weight:900; letter-spacing:3px; text-align:center; color:var(--amber); }
+.report-date { font-size:11px; color:var(--dim); text-align:center; margin-top:4px; }
+.report-divider { height:1px; background:var(--border); margin:14px 0; }
+.report-line { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+.report-label { color:var(--dim); }
+.report-val { font-weight:700; }
+.report-footer { text-align:center; font-size:13px; font-weight:600; margin-top:8px; color:var(--green); }
+.report-sig { text-align:center; font-size:10px; color:var(--dim); margin-top:12px; letter-spacing:2px; }
+
+/* Footer */
+.app-footer {
+  text-align:center; font-size:10px; color:var(--dim);
+  padding:24px 16px 12px; letter-spacing:1px;
+}
+
+/* Achievement popup */
+.achieve-pop {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; justify-content:center; padding:20px 16px;
+  animation: slideDown 0.3s ease-out;
+  pointer-events:none;
+}
+.achieve-pop-inner {
+  background:var(--card); border:1px solid var(--amber); border-radius:14px;
+  padding:14px 24px; text-align:center; color:var(--amber);
+  box-shadow: 0 4px 30px var(--glow);
+}
+.achieve-pop-label { font-size:11px; opacity:0.7; letter-spacing:2px; }
+.achieve-pop-name { font-size:18px; font-weight:800; margin-top:4px; }
+.achieve-pop-desc { font-size:12px; opacity:0.6; margin-top:2px; }
+
+@keyframes slideDown {
+  from { transform:translateY(-30px); opacity:0; }
+  to { transform:translateY(0); opacity:1; }
+}
+
+.hidden { display:none !important; }
+
+/* Social buttons */
+.social-row { display:flex; gap:8px; }
+.social-btn, .social-btn-active {
+  flex:1; border-radius:10px; padding:10px 12px; cursor:pointer;
+  text-align:center; font-family:inherit; font-size:12px; transition:all 0.15s;
+}
+.social-btn { background:var(--card); border:1px solid var(--border); color:var(--text); }
+.social-btn-active { background:var(--glow); border:1px solid var(--amber); color:var(--amber); font-weight:700; }
+.social-btn .emoji, .social-btn-active .emoji { font-size:18px; display:block; }
+.social-btn .text, .social-btn-active .text { font-size:11px; display:block; margin-top:2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading">
+    <h2>缓撞中...</h2>
+    <p>旧手机正在换菜刀</p>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+const MOOD_EMOJIS = ["😆","😊","😐","😞","😤","🥴","💀"];
+const POOP_FORMS = [
+  {emoji:"🫘",label:"散装",desc:"颗粒感十足"},
+  {emoji:"🐍",label:"完美",desc:"教科书级别"},
+  {emoji:"🌊",label:"奔涌",desc:"势不可挡"},
+  {emoji:"🧱",label:"艰难",desc:"工程浩大"},
+  {emoji:"👻",label:"幽灵屎",desc:"感觉有但找不到"},
+];
+const SMOOTHNESS = ["困难重重","需要耐心","自然而然","丝滑顺畅","光速解决"];
+const DRINK_TYPES = [
+  {emoji:"🍺",label:"啤酒"},{emoji:"🍷",label:"红酒"},{emoji:"🥃",label:"烈酒"},
+  {emoji:"🍶",label:"白酒"},{emoji:"🍹",label:"鸡尾酒"},{emoji:"🫗",label:"其他"},
+];
+const KNIFE_RATE = 3.5;
+const STORAGE_KEY = "open-flower-data";
+
+const QUOTES = [
+  "人体进出口贸易记录仪 · 正式营业",
+  "input有多放肆，output就有多诚实",
+  "杜甫澡堂提醒您：多喝热水",
+  "旧手机换菜刀，旧酒精换新屎",
+  "缓撞中…请稍候…",
+  "open flower，open bowel",
+  "你不是在喝酒，你是在投资明天的厕所时间",
+  "每一坨都是身体写给你的review",
+  "左手画左眉毛，右手画右眉毛，双线并行",
+  "本系统已通过杜甫澡堂认证",
+];
+
+const ACHIEVEMENTS = [
+  {id:"first_drink",name:"Open Flower 🌸",desc:"记录第一杯酒",check:s=>s.drinks>=1},
+  {id:"first_poop",name:"首次出货",desc:"记录第一次出货",check:s=>s.poops>=1},
+  {id:"dual_ops",name:"左手画左眉毛右手画右眉毛",desc:"同一天既进货又出货",check:s=>s.sameDayBoth},
+  {id:"three_poops",name:"高效能人士",desc:"一天出货3次",check:s=>s.maxPoopsDay>=3},
+  {id:"three_drinks",name:"品鉴大师",desc:"一天进货3种以上",check:s=>s.maxDrinkTypesDay>=3},
+  {id:"streak_3",name:"杜甫澡堂VIP会员",desc:"连续3天打卡",check:s=>s.streak>=3},
+  {id:"streak_7",name:"QQ缓撞·永不断连",desc:"连续7天打卡",check:s=>s.streak>=7},
+  {id:"karma",name:"因果报应速递 🚚",desc:"喝酒后第二天拉肚子",check:s=>s.karmaHit},
+  {id:"night_poop",name:"夜间作业员",desc:"凌晨记录出货",check:s=>s.nightPoop},
+  {id:"solo_5",name:"独酌侠",desc:"连续5次独饮",check:s=>s.soloStreak>=5},
+  {id:"ten_records",name:"人体进出口贸易·正式营业",desc:"累计记录10次",check:s=>s.total>=10},
+  {id:"spend_100",name:"百刀斩",desc:"累计酒钱超过100把菜刀",check:s=>s.totalKnives>=100},
+];
+
+// --- State ---
+let records = [];
+let currentView = "home";
+let quote = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+
+// Form state
+let drinkType=0, drinkMood=2, drinkCost="", drinkSocial="solo", drinkNote="";
+let poopForm=1, poopSmooth=2, poopMood=2, poopNote="";
+
+// --- Helpers ---
+function getToday(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function isNightHour(){ const h=new Date().getHours(); return h>=0&&h<5; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function loadData(){
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) records=JSON.parse(raw); } catch(e){}
+}
+function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(records)); } catch(e){}
+}
+
+function computeStats(recs){
+  const s={drinks:0,poops:0,total:0,sameDayBoth:false,maxPoopsDay:0,maxDrinkTypesDay:0,streak:0,karmaHit:false,nightPoop:false,soloStreak:0,totalKnives:0};
+  const byDate={};
+  recs.forEach(r=>{
+    if(!byDate[r.date]) byDate[r.date]={drinks:[],poops:[]};
+    if(r.type==="drink"){byDate[r.date].drinks.push(r);s.drinks++;s.totalKnives+=(r.cost||0)/KNIFE_RATE;}
+    else{byDate[r.date].poops.push(r);s.poops++;}
+    s.total++;
+    if(r.type==="poop"&&r.nightRecord) s.nightPoop=true;
+  });
+  const dates=Object.keys(byDate).sort();
+  dates.forEach(d=>{
+    const day=byDate[d];
+    if(day.drinks.length>0&&day.poops.length>0) s.sameDayBoth=true;
+    s.maxPoopsDay=Math.max(s.maxPoopsDay,day.poops.length);
+    const types=new Set(day.drinks.map(dr=>dr.drinkType));
+    s.maxDrinkTypesDay=Math.max(s.maxDrinkTypesDay,types.size);
+  });
+  // streak
+  let streak=0; let cd=new Date();
+  for(let i=0;i<365;i++){
+    const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,"0")}-${String(cd.getDate()).padStart(2,"0")}`;
+    if(byDate[ds]) streak++; else if(i>0) break;
+    cd.setDate(cd.getDate()-1);
+  }
+  s.streak=streak;
+  // karma
+  dates.forEach((d,i)=>{
+    if(i<dates.length-1&&byDate[d].drinks.length>0){
+      const da=new Date(d); da.setDate(da.getDate()+1);
+      const das=`${da.getFullYear()}-${String(da.getMonth()+1).padStart(2,"0")}-${String(da.getDate()).padStart(2,"0")}`;
+      if(dates[i+1]===das){ if(byDate[das].poops.some(p=>p.form===2)) s.karmaHit=true; }
+    }
+  });
+  // solo streak
+  let solo=0,maxSolo=0;
+  recs.filter(r=>r.type==="drink").sort((a,b)=>a.ts-b.ts).forEach(d=>{
+    if(d.social==="solo"){solo++;maxSolo=Math.max(maxSolo,solo);}else solo=0;
+  });
+  s.soloStreak=maxSolo;
+  return s;
+}
+
+function getUnlocked(recs){ const s=computeStats(recs); return ACHIEVEMENTS.filter(a=>a.check(s)); }
+
+function poopRatingCalc(form,smooth){
+  const base=70;
+  const fs=form===1?20:form===4?15:form===0?5:form===3?8:10;
+  const ss=smooth*3;
+  const score=Math.min(99,base+fs+ss-Math.floor(Math.random()*5));
+  const notes=[
+    form===1?"教科书般的呈现":form===0?"需要更多凝聚力":form===2?"气势磅礴":form===3?"大器晚成":"神秘主义作品",
+    smooth>=3?"毫不拖泥带水":smooth<=1?"过程可圈可点":"中规中矩",
+  ];
+  return {score,notes};
+}
+
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  if(attrs) Object.entries(attrs).forEach(([k,v])=>{
+    if(k==="className") el.className=v;
+    else if(k==="onclick"||k==="oninput"||k==="onchange") el.addEventListener(k.slice(2),v);
+    else if(k==="style"&&typeof v==="object") Object.assign(el.style,v);
+    else el.setAttribute(k,v);
+  });
+  children.flat(9).forEach(c=>{
+    if(c==null) return;
+    el.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c);
+  });
+  return el;
+}
+
+// --- Achievement popup ---
+let popTimer=null;
+function showAchievePop(ach){
+  let pop=document.getElementById("achieve-pop");
+  if(pop) pop.remove();
+  pop=h("div",{id:"achieve-pop",className:"achieve-pop"},
+    h("div",{className:"achieve-pop-inner"},
+      h("div",{className:"achieve-pop-label"},"🏆 成就解锁"),
+      h("div",{className:"achieve-pop-name"},ach.name),
+      h("div",{className:"achieve-pop-desc"},ach.desc),
+    )
+  );
+  document.getElementById("app").appendChild(pop);
+  clearTimeout(popTimer);
+  popTimer=setTimeout(()=>{const p=document.getElementById("achieve-pop");if(p)p.remove();},3000);
+}
+
+function checkNewAchievements(before,after){
+  const bIds=before.map(a=>a.id);
+  const news=after.filter(a=>!bIds.includes(a.id));
+  if(news.length>0) showAchievePop(news[0]);
+}
+
+// --- Render ---
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  // header
+  app.appendChild(h("div",{className:"header"},
+    h("h1",null,"Open Flower 🌸"),
+    h("div",{className:"quote"},quote),
+  ));
+
+  const content=h("div",{className:"content"});
+  app.appendChild(content);
+
+  if(currentView==="home") renderHome(content);
+  else if(currentView==="add_drink") renderDrinkForm(content);
+  else if(currentView==="add_poop") renderPoopForm(content);
+  else if(currentView==="history") renderHistory(content);
+  else if(currentView==="achievements") renderAchievements(content);
+  else if(currentView==="report") renderReport(content);
+
+  app.appendChild(h("div",{className:"app-footer"},"Powered by 杜甫澡堂 · Est. QQ缓撞纪元"));
+}
+
+function renderHome(content){
+  const today=getToday();
+  const todayR=records.filter(r=>r.date===today);
+  const tDrinks=todayR.filter(r=>r.type==="drink");
+  const tPoops=todayR.filter(r=>r.type==="poop");
+  const stats=computeStats(records);
+
+  // Today card
+  const todayCard=h("div",{className:"today-card"},
+    h("div",{className:"today-label"},"今日进出口概况"),
+    h("div",{className:"today-row"},
+      h("div",{className:"today-stat"},h("div",{className:"today-num"},String(tDrinks.length)),h("div",{className:"today-tag"},"🍺 进货")),
+      h("div",{className:"today-divider"},"⟷"),
+      h("div",{className:"today-stat"},h("div",{className:"today-num"},String(tPoops.length)),h("div",{className:"today-tag"},"💩 出货")),
+    ),
+  );
+  if(stats.streak>0) todayCard.appendChild(h("div",{className:"streak-badge"},`🔥 连续打卡 ${stats.streak} 天`));
+  content.appendChild(todayCard);
+
+  // Actions
+  content.appendChild(h("div",{className:"action-row"},
+    h("button",{className:"btn-drink",onclick:()=>{currentView="add_drink";render();}},
+      h("span",{className:"icon"},"🍺"),h("span",{className:"label"},"记录进货")),
+    h("button",{className:"btn-poop",onclick:()=>{currentView="add_poop";render();}},
+      h("span",{className:"icon"},"💩"),h("span",{className:"label"},"记录出货")),
+  ));
+
+  // Chart
+  const last7=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const dayR=records.filter(r=>r.date===ds);
+    last7.push({label:["日","一","二","三","四","五","六"][d.getDay()],drinks:dayR.filter(r=>r.type==="drink").length,poops:dayR.filter(r=>r.type==="poop").length});
+  }
+  const maxBar=Math.max(1,...last7.map(d=>Math.max(d.drinks,d.poops)));
+  const chartCols=last7.map(d=>
+    h("div",{className:"chart-col"},
+      h("div",{className:"bar-wrap"},
+        h("div",{className:"bar-drink",style:{height:`${(d.drinks/maxBar)*60}px`}}),
+        h("div",{className:"bar-poop",style:{height:`${(d.poops/maxBar)*60}px`}}),
+      ),
+      h("div",{className:"chart-day"},d.label),
+    )
+  );
+  content.appendChild(h("div",{className:"chart-card"},
+    h("div",{className:"chart-title"},"近7日进出口走势"),
+    h("div",{className:"chart-row"},...chartCols),
+    h("div",{className:"chart-legend"},
+      h("span",{className:"legend-item"},h("span",{className:"legend-dot",style:{background:"var(--amber)"}})," 进"),
+      h("span",{className:"legend-item"},h("span",{className:"legend-dot",style:{background:"var(--purple)"}})," 出"),
+    ),
+  ));
+
+  // Spend
+  const thisMonth=today.slice(0,7);
+  const monthSpend=records.filter(r=>r.type==="drink"&&r.date.startsWith(thisMonth)).reduce((s,r)=>s+(r.cost||0),0);
+  content.appendChild(h("div",{className:"spend-card"},
+    h("div",{className:"spend-label"},"本月酒钱"),
+    h("div",{className:"spend-row"},
+      h("div",{className:"spend-amount"},`¥${monthSpend.toFixed(0)}`),
+      h("div",{className:"spend-knife"},`≈ ${(monthSpend/KNIFE_RATE).toFixed(1)} 把菜刀 🔪`),
+    ),
+  ));
+
+  // Nav
+  content.appendChild(h("div",{className:"nav-row"},
+    h("button",{className:"nav-btn",onclick:()=>{currentView="history";render();}},"📋 进出口记录"),
+    h("button",{className:"nav-btn",onclick:()=>{currentView="achievements";render();}},"🏆 成就墙"),
+    h("button",{className:"nav-btn",onclick:()=>{currentView="report";render();}},"📊 周报"),
+  ));
+}
+
+function renderDrinkForm(content){
+  content.appendChild(h("div",{className:"form-title"},"🍺 进货登记"));
+
+  content.appendChild(h("div",{className:"field-label"},"喝的什么"));
+  const typeRow=h("div",{className:"option-row"});
+  DRINK_TYPES.forEach((dt,i)=>{
+    typeRow.appendChild(h("button",{className:drinkType===i?"option-active":"option",onclick:()=>{drinkType=i;render();}},
+      h("span",{className:"emoji"},dt.emoji),h("span",{className:"text"},dt.label)));
+  });
+  content.appendChild(typeRow);
+
+  content.appendChild(h("div",{className:"field-label"},"花了多少（元）"));
+  const inp=h("input",{className:"input",type:"number",value:drinkCost,placeholder:"旧手机换菜刀汇率自动换算",oninput:e=>{drinkCost=e.target.value;const hint=document.getElementById("knife-hint");if(hint){const v=parseFloat(drinkCost);if(v>0){hint.textContent=`≈ ${(v/KNIFE_RATE).toFixed(1)} 把菜刀 🔪`;hint.style.display="block";}else hint.style.display="none";}}});
+  content.appendChild(inp);
+  const kh=h("div",{id:"knife-hint",className:"knife-hint",style:{display:parseFloat(drinkCost)>0?"block":"none"}},
+    parseFloat(drinkCost)>0?`≈ ${(parseFloat(drinkCost)/KNIFE_RATE).toFixed(1)} 把菜刀 🔪`:""
+  );
+  content.appendChild(kh);
+
+  content.appendChild(h("div",{className:"field-label"},"酒搭子"));
+  const socialRow=h("div",{className:"social-row"});
+  [{k:"solo",e:"🧍",t:"独酌"},{k:"social",e:"👥",t:"有搭子"}].forEach(s=>{
+    socialRow.appendChild(h("button",{className:drinkSocial===s.k?"social-btn-active":"social-btn",onclick:()=>{drinkSocial=s.k;render();}},
+      h("span",{className:"emoji"},s.e),h("span",{className:"text"},s.t)));
+  });
+  content.appendChild(socialRow);
+
+  content.appendChild(h("div",{className:"field-label"},"此刻心情"));
+  const moodRow=h("div",{className:"option-row"});
+  MOOD_EMOJIS.forEach((em,i)=>{
+    moodRow.appendChild(h("button",{className:drinkMood===i?"mood-active":"mood",onclick:()=>{drinkMood=i;render();}},em));
+  });
+  content.appendChild(moodRow);
+
+  content.appendChild(h("div",{className:"field-label"},"备注（选填）"));
+  content.appendChild(h("input",{className:"input",value:drinkNote,placeholder:"今日心得、品鉴笔记...",oninput:e=>{drinkNote=e.target.value;}}));
+
+  content.appendChild(h("div",{className:"form-actions"},
+    h("button",{className:"btn-cancel",onclick:()=>{resetDrinkForm();currentView="home";render();}},"算了"),
+    h("button",{className:"btn-submit-drink",onclick:submitDrink},"登记入库"),
+  ));
+}
+
+function renderPoopForm(content){
+  content.appendChild(h("div",{className:"form-title"},"💩 出货登记"));
+
+  content.appendChild(h("div",{className:"field-label"},"作品形态"));
+  const formRow=h("div",{className:"option-row"});
+  POOP_FORMS.forEach((pf,i)=>{
+    formRow.appendChild(h("button",{className:poopForm===i?"option-active":"option",onclick:()=>{poopForm=i;render();}},
+      h("span",{className:"emoji"},pf.emoji),h("span",{className:"text"},pf.label)));
+  });
+  content.appendChild(formRow);
+
+  content.appendChild(h("div",{className:"field-label"},"顺畅度"));
+  const sw=h("div",{className:"slider-wrap"});
+  const slider=h("input",{type:"range",className:"slider",min:"0",max:"4",value:String(poopSmooth),
+    oninput:e=>{poopSmooth=Number(e.target.value);const lb=document.getElementById("smooth-label");if(lb)lb.textContent=SMOOTHNESS[poopSmooth];}});
+  sw.appendChild(slider);
+  sw.appendChild(h("div",{id:"smooth-label",className:"slider-label"},SMOOTHNESS[poopSmooth]));
+  content.appendChild(sw);
+
+  content.appendChild(h("div",{className:"field-label"},"出货后心情"));
+  const moodRow=h("div",{className:"option-row"});
+  MOOD_EMOJIS.forEach((em,i)=>{
+    moodRow.appendChild(h("button",{className:poopMood===i?"mood-active":"mood",onclick:()=>{poopMood=i;render();}},em));
+  });
+  content.appendChild(moodRow);
+
+  content.appendChild(h("div",{className:"field-label"},"品鉴笔记（选填）"));
+  content.appendChild(h("input",{className:"input",value:poopNote,placeholder:"记录本次创作心得...",oninput:e=>{poopNote=e.target.value;}}));
+
+  content.appendChild(h("div",{className:"form-actions"},
+    h("button",{className:"btn-cancel",onclick:()=>{resetPoopForm();currentView="home";render();}},"算了"),
+    h("button",{className:"btn-submit-poop",onclick:submitPoop},"提交作品"),
+  ));
+}
+
+function renderHistory(content){
+  content.appendChild(h("div",{className:"form-title"},"📋 进出口记录"));
+  if(records.length===0){
+    content.appendChild(h("div",{className:"empty"},"还没有记录\n人体贸易尚未开始"));
+  } else {
+    const list=h("div",{className:"history-list"});
+    [...records].reverse().slice(0,50).forEach(r=>{
+      const icon=r.type==="drink"?(DRINK_TYPES[r.drinkType]||{}).emoji||"🍺":(POOP_FORMS[r.form]||{}).emoji||"💩";
+      const main=r.type==="drink"
+        ?`${(DRINK_TYPES[r.drinkType]||{}).label||"酒"} ${r.social==="solo"?"· 独酌":"· 有搭子"} ${r.cost>0?"· ¥"+r.cost:""}`
+        :`${(POOP_FORMS[r.form]||{}).label||"💩"} · ${SMOOTHNESS[r.smoothness]||""} ${r.rating?"· "+r.rating.score+"分":""}`;
+      const sub=`${r.date} ${MOOD_EMOJIS[r.mood]||""} ${r.note?'"'+r.note+'"':""}`;
+      const rid=r.id;
+      list.appendChild(h("div",{className:"history-item"},
+        h("div",{className:"history-left"},
+          h("span",{className:"history-icon"},icon),
+          h("div",null,h("div",{className:"history-main"},main),h("div",{className:"history-date"},sub)),
+        ),
+        h("button",{className:"delete-btn",onclick:()=>{records=records.filter(x=>x.id!==rid);saveData();render();}},"×"),
+      ));
+    });
+    content.appendChild(list);
+  }
+  content.appendChild(h("button",{className:"back-btn",onclick:()=>{currentView="home";render();}},"← 回到首页"));
+}
+
+function renderAchievements(content){
+  content.appendChild(h("div",{className:"form-title"},"🏆 成就墙"));
+  const unlocked=getUnlocked(records);
+  const grid=h("div",{className:"achieve-grid"});
+  ACHIEVEMENTS.forEach(a=>{
+    const got=unlocked.some(u=>u.id===a.id);
+    grid.appendChild(h("div",{className:got?"achieve-card":"achieve-card-locked"},
+      h("div",{className:"achieve-name"},got?a.name:"???"),
+      h("div",{className:"achieve-desc"},a.desc),
+    ));
+  });
+  content.appendChild(grid);
+  content.appendChild(h("div",{className:"achieve-count"},`${unlocked.length} / ${ACHIEVEMENTS.length} 已解锁`));
+  content.appendChild(h("button",{className:"back-btn",onclick:()=>{currentView="home";render();}},"← 回到首页"));
+}
+
+function renderReport(content){
+  content.appendChild(h("div",{className:"form-title"},"📊 周报生成器"));
+  const stats=computeStats(records);
+  const unlocked=getUnlocked(records);
+  const totalSpend=records.filter(r=>r.type==="drink").reduce((s,r)=>s+(r.cost||0),0);
+  const ratio=stats.drinks>0?(stats.poops/stats.drinks).toFixed(2):"N/A";
+  const verdict=stats.poops>stats.drinks?"出口大于进口，贸易顺差 📈":stats.drinks>stats.poops?"进口大于出口，库存积压中 📦":"进出口平衡，完美贸易体 ⚖️";
+
+  const lines=[
+    ["📥 累计进货",stats.drinks+" 次"],
+    ["📤 累计出货",stats.poops+" 次"],
+    ["💰 累计酒钱","¥"+totalSpend.toFixed(0)],
+    ["🔪 折合菜刀",stats.totalKnives.toFixed(1)+" 把"],
+    ["📈 投入产出比",ratio],
+    ["🔥 连续打卡",stats.streak+" 天"],
+    ["🏆 成就",unlocked.length+"/"+ACHIEVEMENTS.length],
+  ];
+
+  const card=h("div",{className:"report-card"},
+    h("div",{className:"report-header"},"OPEN FLOWER 周报"),
+    h("div",{className:"report-date"},getToday()),
+    h("div",{className:"report-divider"}),
+    ...lines.map(([l,v])=>h("div",{className:"report-line"},h("span",{className:"report-label"},l),h("span",{className:"report-val"},v))),
+    h("div",{className:"report-divider"}),
+    h("div",{className:"report-footer"},verdict),
+    h("div",{className:"report-sig"},"— Open Flower · 杜甫澡堂认证 —"),
+  );
+  content.appendChild(card);
+  content.appendChild(h("button",{className:"back-btn",onclick:()=>{currentView="home";render();}},"← 回到首页"));
+}
+
+function resetDrinkForm(){ drinkType=0;drinkMood=2;drinkCost="";drinkSocial="solo";drinkNote=""; }
+function resetPoopForm(){ poopForm=1;poopSmooth=2;poopMood=2;poopNote=""; }
+
+function submitDrink(){
+  const before=getUnlocked(records);
+  records.push({id:uid(),type:"drink",date:getToday(),ts:Date.now(),drinkType,mood:drinkMood,cost:parseFloat(drinkCost)||0,social:drinkSocial,note:drinkNote,nightRecord:isNightHour()});
+  saveData();
+  const after=getUnlocked(records);
+  checkNewAchievements(before,after);
+  resetDrinkForm();
+  currentView="home";
+  render();
+}
+
+function submitPoop(){
+  const before=getUnlocked(records);
+  const rating=poopRatingCalc(poopForm,poopSmooth);
+  records.push({id:uid(),type:"poop",date:getToday(),ts:Date.now(),form:poopForm,smoothness:poopSmooth,mood:poopMood,note:poopNote,rating,nightRecord:isNightHour()});
+  saveData();
+  const after=getUnlocked(records);
+  checkNewAchievements(before,after);
+  resetPoopForm();
+  currentView="home";
+  render();
+}
+
+// --- Init ---
+loadData();
+setTimeout(render,600); // 缓撞 delay
+
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
